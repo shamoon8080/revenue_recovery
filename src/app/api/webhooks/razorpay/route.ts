@@ -226,6 +226,7 @@ export async function POST(request: Request) {
         },
       });
     }
+
     if (eventType === "payment_link.paid") {
       const payloadRoot = payload.payload;
 
@@ -254,51 +255,65 @@ export async function POST(request: Request) {
         );
       }
 
+      console.log("[PAYMENT LINK PAID]", {
+        eventId,
+        paymentLinkId,
+        amountPaid,
+      });
+
       const recoveryCase = await prisma.recoveryCase.findFirst({
         where: {
           paymentLinkId,
         },
       });
 
-      if (recoveryCase) {
-        const recoveryAction =
-          await prisma.recoveryAction.findFirst({
-            where: {
-              recoveryCaseId: recoveryCase.id,
-              externalId: paymentLinkId,
-              actionType: "RETRY_PAYMENT_LINK",
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-          });
-
-        if (recoveryAction) {
-          const now = new Date();
-
-          await prisma.$transaction([
-            prisma.recoveryAction.update({
-              where: {
-                id: recoveryAction.id,
-              },
-              data: {
-                status: "EXECUTED",
-                completedAt: now,
-              },
-            }),
-            prisma.recoveryCase.update({
-              where: {
-                id: recoveryCase.id,
-              },
-              data: {
-                amountPaid,
-                paymentStatus: "CAPTURED",
-                recoveryStatus: "RECOVERED",
-              },
-            }),
-          ]);
-        }
+      if (!recoveryCase) {
+        throw new Error(
+          `Recovery case not found for payment link ${paymentLinkId}.`,
+        );
       }
+
+      const recoveryAction =
+        await prisma.recoveryAction.findFirst({
+          where: {
+            recoveryCaseId: recoveryCase.id,
+            actionType: "RETRY_PAYMENT_LINK",
+            externalId: paymentLinkId,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+
+      if (!recoveryAction) {
+        throw new Error(
+          `Recovery action not found for payment link ${paymentLinkId}.`,
+        );
+      }
+
+      const now = new Date();
+
+      await prisma.$transaction([
+        prisma.recoveryAction.update({
+          where: {
+            id: recoveryAction.id,
+          },
+          data: {
+            status: "EXECUTED",
+            completedAt: now,
+          },
+        }),
+        prisma.recoveryCase.update({
+          where: {
+            id: recoveryCase.id,
+          },
+          data: {
+            amountPaid,
+            paymentStatus: "CAPTURED",
+            recoveryStatus: "RECOVERED",
+          },
+        }),
+      ]);
     }
 
     await prisma.webhookEvent.update({
