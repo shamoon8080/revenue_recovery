@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WebhookEventStatus {
+  RECEIVED
+  PROCESSED
+  FAILED
+}
+
+enum PaymentStatus {
+  UNKNOWN
+  FAILED
+  AUTHORIZED
+  CAPTURED
+}
+
+enum RecoveryStatus {
+  AT_RISK
+  ELIGIBLE
+  INTERVENTION_PENDING
+  ACTION_EXECUTED
+  AWAITING_OUTCOME
+  RECOVERED
+  SUPPRESSED
+  ESCALATED
+  EXPIRED
+}
+
+enum RecoveryActionType {
+  RETRY_PAYMENT_LINK
+}
+
+enum RecoveryActionStatus {
+  PENDING
+  EXECUTED
+  FAILED
+}
+
+model WebhookEvent {
+  id              String             @id @default(cuid())
+  razorpayEventId String             @unique
+  eventType       String
+  receivedAt      DateTime           @default(now())
+  processedAt     DateTime?
+  status          WebhookEventStatus @default(RECEIVED)
+
+  createdAt DateTime @default(now())
+
+  @@index([eventType])
+  @@index([status])
+}
+
+model RecoveryCase {
+  id            String  @id @default(cuid())
+  referenceId   String  @unique
+  paymentLinkId String?
+  orderId       String?
+  paymentId     String?
+
+  amount     Int
+  amountPaid Int    @default(0)
+  currency   String @default("INR")
+
+  paymentStatus  PaymentStatus  @default(UNKNOWN)
+  recoveryStatus RecoveryStatus @default(AT_RISK)
+
+  errorCode        String?
+  errorDescription String?
+  errorReason      String?
+  errorSource      String?
+  errorStep        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  actions RecoveryAction[]
+
+  @@index([paymentLinkId])
+  @@index([paymentId])
+  @@index([paymentStatus])
+  @@index([recoveryStatus])
+}
+
+model RecoveryAction {
+  id             String               @id @default(cuid())
+  recoveryCaseId String
+  actionType     RecoveryActionType
+  status         RecoveryActionStatus @default(PENDING)
+
+  reason     String?
+  externalId String?
+
+  createdAt   DateTime  @default(now())
+  executedAt  DateTime?
+  completedAt DateTime?
+
+  recoveryCase RecoveryCase @relation(fields: [recoveryCaseId], references: [id], onDelete: Cascade)
+
+  @@index([recoveryCaseId])
+  @@index([actionType])
+  @@index([status])
+}
