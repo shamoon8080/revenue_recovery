@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Revenue Rescue
 
-## Getting Started
+### AI Revenue Recovery — Razorpay Buildathon
 
-First, run the development server:
+Revenue Rescue is a recovery intelligence and action layer that helps businesses turn failed Razorpay payments into recovered revenue.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Instead of treating a failed payment as the end of the transaction, Revenue Rescue detects the failure, evaluates the recovery opportunity, recommends an intervention, creates a retry Payment Link, and tracks the outcome through Razorpay webhooks.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## The Problem
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+A failed payment does not always mean lost revenue.
 
-## Learn More
+Customers may still be willing to complete the transaction, but businesses often lack a systematic way to:
 
-To learn more about Next.js, take a look at the following resources:
+- detect failed payments quickly
+- understand why a payment failed
+- identify which failures are worth pursuing
+- decide what recovery action to take
+- execute that action
+- measure whether the revenue was actually recovered
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Revenue Rescue closes this loop.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## How It Works
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```text
+Razorpay payment fails
+        ↓
+payment.failed webhook
+        ↓
+RecoveryCase created
+        ↓
+Recovery opportunity evaluated
+        ↓
+Explainable recovery score
+        ↓
+Recommended recovery action
+        ↓
+Retry Payment Link created
+        ↓
+Customer retries payment
+        ↓
+payment_link.paid webhook
+        ↓
+RecoveryCase → RECOVERED
+        ↓
+Recovered revenue reflected on dashboard
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
